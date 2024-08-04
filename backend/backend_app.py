@@ -23,7 +23,43 @@ def generate_id(storage):
 def get_posts():
     """
     Returns the Data.
+    If the request contains sort and direction keys will sorted before return.
     """
+    sort = request.args.get("sort")
+    direction = request.args.get("direction")
+
+    # Validate if value for sort argument is valid
+    if sort and sort not in ["post", "title"]:
+        response = {
+            "error": "Bad Request",
+            "message": f"value {sort} is not allowed! Please choose between post and title!",
+        }
+        return jsonify(response), 400
+
+    # Validate if value for sort argument is valid
+    if direction and direction not in ["asc", "desc"]:
+        response = {
+            "error": "Bad Request",
+            "message": f"value {sort} is not allowed! Please choose between asc and desc!",
+        }
+        return jsonify(response), 400
+
+    # If value for sort argument is title.
+    if sort == "title":
+        if direction == "asc":
+            sorted_posts = sorted(POSTS, key=lambda x: x["title"])
+        elif direction == "desc":
+            sorted_posts = sorted(POSTS, key=lambda x: x["title"], reverse=True)
+        return jsonify(sorted_posts)
+
+    # If value for sort argument is post.
+    if sort == "post":
+        if direction == "asc":
+            sorted_posts = sorted(POSTS, key=lambda x: x["post"])
+        elif direction == "desc":
+            sorted_posts = sorted(POSTS, key=lambda x: x["post"], reverse=True)
+        return jsonify(sorted_posts)
+
     return jsonify(POSTS)
 
 
@@ -150,12 +186,16 @@ def search_post():
     title_query = request.args.get("title")
     content_query = request.args.get("content")
 
+    # Checks if the given key is title
+    # Append to list if title_query in title
     if title_query:
         post_list = []
         for data in POSTS:
             if title_query.lower() in data["title"].lower():
                 post_list.append(data)
 
+    # Checks if the given key is post
+    # Append to list if post_query in post
     if content_query:
         post_list = []
         for data in POSTS:

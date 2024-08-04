@@ -11,7 +11,7 @@ POSTS = [
 
 
 def generate_id(storage):
-    """Get a list of dict and sum 1 to the latest id and returns it"""
+    '''Get a list of dict and sum 1 to the latest id and returns it'''
     max_id = 0
     for data in storage:
         if max_id < data["id"]:
@@ -19,38 +19,43 @@ def generate_id(storage):
     return max_id + 1
 
 
-@app.route("/api/posts", methods=["GET"])
+@app.route('/api/posts', methods=['GET'])
 def get_posts():
-    """
+    '''
     Returns the Data.
-    """
+    '''
     return jsonify(POSTS)
 
 
-@app.route("/api/posts", methods=["POST"])
+@app.route('/api/posts', methods=['POST'])
 def add_post():
-    """
+    '''
     Gets a JSON file and store the data into Storage and returns new Data.
-    """
+    '''
     post_json = request.get_json()
-
+    
     # Validate Data
-    if (
-        "title" not in post_json and "content" not in post_json
-    ):  # If response JSON didnt have title and content.
+    if "title" not in post_json and "content" not in post_json:  # If response JSON didnt have title and content.
         response = {
             "error": "Bad Request",
-            "message": "Missing fields: 'title', 'content'",
+            "message": "Missing fields: 'title', 'content'"
+        }
+        return response, 400 
+    
+    elif "title" not in post_json:  # If response JSON didnt have title
+        response = {
+            "error": "Bad Request",
+            "message": "Missing fields: 'title'"
+        }
+        return response, 400
+    
+    elif "content" not in post_json:  # If response JSON didnt have content
+        response = {
+            "error": "Bad Request",
+            "message": "Missing fields: 'content'"
         }
         return response, 400
 
-    elif "title" not in post_json:  # If response JSON didnt have title
-        response = {"error": "Bad Request", "message": "Missing fields: 'title'"}
-        return response, 400
-
-    elif "content" not in post_json:  # If response JSON didnt have content
-        response = {"error": "Bad Request", "message": "Missing fields: 'content'"}
-        return response, 400
 
     # add new data to storage.
     id = generate_id(POSTS)
@@ -59,8 +64,11 @@ def add_post():
     return jsonify(POSTS)
 
 
-@app.route("/api/posts", methods=["DELETE"])
+@app.route('/api/posts', methods=['DELETE'])
 def delete_post():
+    '''
+    Get a id as argument and delete it from POSTS.
+    '''
     global POSTS
     id = request.args.get("id")
 
@@ -74,7 +82,7 @@ def delete_post():
     if not id_in_posts:
         response = {
             "error": "Bad Request",
-            "message": "There is no post with the given id",
+            "message": "There is no post with the given id"
         }
         return response, 400
 
@@ -84,8 +92,12 @@ def delete_post():
     return jsonify(message)
 
 
-@app.route("/api/posts", methods=["PUT"])
+@app.route('/api/posts', methods=['PUT'])
 def update_post():
+    '''
+    Get a id as argument and gets a json which data have to be changed.
+    Changes the Data and replace it in POSTS.
+    '''
     global POSTS
     id = request.args.get("id")
     json_data = request.get_json()
@@ -96,29 +108,31 @@ def update_post():
         if int(id) == data["id"]:
             id_in_posts = True
 
-    # If id not in POSTS.
+    # If id not in POSTS return 404
     if not id_in_posts:
         response = {
             "error": "Bad Request",
-            "message": "There is no post with the given id",
+            "message": "There is no post with the given id"
         }
         return response, 400
-
-    # If key not in keys.
+    
+    # Validate if keys are in Data.
     keys = ["id", "title", "content"]
     for key in json_data.keys():
         if key not in keys:
-            response = {"error": "Bad Request", "message": f"{key} is not a valid key."}
+            response = {
+            "error": "Bad Request",
+            "message": f"{key} is not a valid key."
+            }
             return response, 400
-
+        
+    # Fetch old data from POSTS
     for data in POSTS:
         if data["id"] == int(id):
-            old_data = {
-                "id": data["id"],
-                "title": data["title"],
-                "content": data["content"],
-            }
+            old_data = {"id": data["id"], "title": data["title"], "content": data["content"]}
 
+
+    # Iterate throught old data and replace it with new
     new_data = {}
     for key in old_data.keys():
         if key in json_data:
@@ -126,11 +140,12 @@ def update_post():
         else:
             new_data[key] = old_data[key]
 
+    # Delete old data and insert new data.
     POSTS = [data for data in POSTS if data["id"] != int(id)]
     POSTS.append(new_data)
 
     return new_data
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5002, debug=True)
